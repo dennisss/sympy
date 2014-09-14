@@ -135,6 +135,7 @@ class LatexPrinter(Printer):
         "mat_delim": "[",
         "symbol_names": {},
         "ln_notation": False,
+		"align": "c"
     }
 
     def __init__(self, settings=None):
@@ -1421,7 +1422,7 @@ class LatexPrinter(Printer):
             if self._settings['mode'] == 'inline':
                 mat_str = 'smallmatrix'
             else:
-                if (expr.cols <= 10) is True:
+                if (expr.cols <= 10) is True and self._settings['align'] == 'c':
                     mat_str = 'matrix'
                 else:
                     mat_str = 'array'
@@ -1429,7 +1430,7 @@ class LatexPrinter(Printer):
         out_str = r'\begin{%MATSTR%}%s\end{%MATSTR%}'
         out_str = out_str.replace('%MATSTR%', mat_str)
         if mat_str == 'array':
-            out_str = out_str.replace('%s', '{' + 'c'*expr.cols + '}%s')
+            out_str = out_str.replace('%s', '{' + self._settings['align']*expr.cols + '}%s')
         if self._settings['mat_delim']:
             left_delim = self._settings['mat_delim']
             right_delim = self._delim_dict[left_delim]
@@ -2052,7 +2053,7 @@ class LatexPrinter(Printer):
         return latex_result
 
     def _print_DiagramGrid(self, grid):
-        latex_result = "\\begin{array}{%s}\n" % ("c" * grid.width)
+        latex_result = "\\begin{array}{%s}\n" % (self._settings["align"] * grid.width)
 
         for i in range(grid.height):
             for j in range(grid.width):
