@@ -99,6 +99,9 @@ class TransformIter:
 			raise TransformPriorityException(num)
 		return
 
+	def match(self, pat):
+		'''Match a token pattern'''
+		pass
 
 
 
@@ -109,10 +112,9 @@ class TexToken:
 	'''Represents a token extracted from Tex'''
 
 	def __init__(self):
-		#self.sub = None
-		#self.super = None
 		pass
 
+	@staticmethod
 	def parse(data):
 		'''Return the token representation of the data'''
 
@@ -186,6 +188,7 @@ class TexSpecial(TexToken):
 
 
 num_pat = re.compile(r"^(([0-9]+\.?[0-9]*)|([0-9]*\.?[0-9]+))$")
+int_pat = re.compile(r"[0-9]*")
 
 class TexRegular(TexToken):
 	'''A plain character with no special meaning'''
@@ -211,8 +214,15 @@ class TexRegular(TexToken):
 			it.priority(2)
 			it[:] = expr(it[:0]) - expr(it[1:])
 		elif self.data == "/":
-			it[:] = expr(it[:0]) / expr(it[1:])
+
+			# TODO: {}^1/_2 will not work are the exponent was consumed by the empty group
+			if type(it[-1]) == TexSpecial and it[-1].data == "^" and \
+				type(it[1]) == TexSpecial and it[-1].data == "_":
+					it[-1:2] = expr(it[-1].arg) / expr(it[1].arg)
+			else:
+				it[:] = expr(it[:0]) / expr(it[1:])
 		elif self.data == "*":
+			it.priority(3)
 			it[:] = expr(it[:0]) * expr(it[1:])
 		elif self.data == "=":
 			it[:] = sympy.Eq( expr(it[:0]), expr(it[1:]) )
@@ -236,12 +246,12 @@ class TexRegular(TexToken):
 		elif self.data == "!":
 			it[:1] = sympy.factorial( expr(it[:0]) )
 
-		elif re.match(num_pat, self.data): # Number TODO: Also check that they don't have exponents before merging
+		elif re.match(num_pat, self.data): # Number
 			while type(it[1]) == TexRegular and re.match(num_pat, self.data + it[1].data):
 				self.data = self.data + it[1].data
 				del it[1]
 
-			it[0] = int(self.data) if self.data.isnumeric() else float(self.data)
+			it[0] = int(self.data) if re.match(int_pat, self.data) else float(self.data)
 		else: # Eval as symbol
 			it[0] = sympy.symbols(self.data)
 
@@ -288,6 +298,9 @@ class TexGroup(TexToken):
 			self.inner.append(token)
 
 		return True
+
+	def empty(self):
+		return self.inner.length == 0
 
 	def expr(self, it):
 		it[0] = expr(self.inner)
@@ -343,7 +356,7 @@ class TexTable(TexGroup):
 		return True
 
 
-
+tex_spacing_commands = [",", ":", ";", "!" ] # \! is negative spacing
 tex_commands = {} # Class dictionary based on the name of the control first control sequence
 
 class TexCommand(TexToken):
@@ -357,6 +370,7 @@ class TexCommand(TexToken):
 		self._lastarg = None
 
 
+	@staticmethod
 	def define(name, args = [], defaults=[]):
 
 		if type(name) is dict:
@@ -366,13 +380,14 @@ class TexCommand(TexToken):
 				TexCommand.define(k, v[0], v[1])
 			return
 
-		t = type(name, (TexCommand,), {
+		t = type(name, (TexCommand, object), {
 			'args': args,
 			'name': name,
 			'defaults': defaults
 		})
 		tex_commands[name] = t
 
+	@staticmethod
 	def new(name):
 		if not name in tex_commands:
 			TexCommand.define(name)
@@ -402,7 +417,7 @@ class TexCommand(TexToken):
 
 
 		# Otherwise, if there are more defined arguments, try to add it as a new argument
-		if self._argi < len(self.args) - 1: # TODO: support optional arguments
+		if self._argi < len(self.args) - 1:
 
 			self._argi = self._argi + 1
 			argname = self.args[self._argi]
@@ -443,7 +458,7 @@ class TexCommand(TexToken):
 		elif name == "cos":
 			it[0] = sympy.cos( expr(self.token) )
 		elif name == "choose":
-			it[0] = sympy.binomial( expr(it[:0]), expr(it[1:]) )
+			it[:] = sympy.binomial( expr(it[:0]), expr(it[1:]) )
 		elif name == "sqrt":
 			it[0] = sympy.root( expr(self.token), expr(self.n) )
 
@@ -455,6 +470,7 @@ class TexCommand(TexToken):
 			upper = None
 
 			# TODO: Try to find spacing first, then fall back to mathrm
+			# Pattern: [(int), (limits)?, (^|_){0-2}, (.+), (<spacing>)?, (mathrm of d or del), (.)
 			while type(i[0]) != tex_commands["mathrm"] or str(i[0].token) != 'd': # TODO: Do better letter checking
 				if instart:
 					t = i[0]
@@ -496,14 +512,15 @@ TexCommand.define({
 
 	"sin": ( ['token'], [] ),
 	"cos": ( ['token'], [] ),
-	"tan": ( ['token'], [] )
+	"tan": ( ['token'], [] ),
+	"\\": ( ['spacing'], [0] )
 
 })
 # See http://en.wikibooks.org/wiki/LaTeX/Mathematics for a lot more examples to implement
 
 
-
-
+# Defined Environment
+tex_classes = {}
 class TexObject(tex_commands['begin'], TexTable):
 	'''For command sets: \begin{name} ... \end{name}'''
 
@@ -511,6 +528,8 @@ class TexObject(tex_commands['begin'], TexTable):
 		TexCommand.__init__(self)
 		TexTable.__init__(self, lambda t: (type(t) is tex_commands["end"]))
 
+	def new(name):
+		pass
 
 	def append(self, token):
 		if not TexCommand.append(self, token):

@@ -15,7 +15,7 @@ def test_latex_parser():
 		"( x+ y) (z + w) ": ((x+y)*(z+w)),
 		"\\sqrt[y] 2": root(2, y),
 		"\\sqrt 2x": sqrt(2)*x,
-		"x + z\\pi = y": Eq(x+z*pi, y),
+		"x + z*\\pi = y": Eq(x+z*pi, y),
 		"\\int x \mathrm{d}x": integrate(x, x)
 	}
 
