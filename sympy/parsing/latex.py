@@ -8,6 +8,8 @@ import re
 import sympy
 import sympy.abc
 
+import sympy.functions.elementary.piecewise
+
 
 class TransformPriorityException(Exception):
 	def __init__(self, num):
@@ -101,6 +103,20 @@ class TransformIter:
 
 	def match(self, pat):
 		'''Match a token pattern'''
+		'''
+			For an integral:
+			[(int), (limits)?, (^|_){0-2}, (.+), (<spacing>)?, (mathrm of d or del), (.)]
+
+
+			[
+				(TexCommand, 'int'),
+				(TexCommand, 'limits', '?'),
+				(TexSpecial, '^')
+
+			]
+
+		'''
+
 		pass
 
 
@@ -177,9 +193,8 @@ class TexSpecial(TexToken):
 
 	def expr(self, it):
 		if self.data == "^":
-
-			it[:0] = expr(it[:0]) ** expr(self.arg)
-			del it.next()[0]
+			it[-1] = expr(it[-1]) ** expr(self.arg)
+			del it[0]
 
 		elif self.data == "_":
 			del it[0]
@@ -188,7 +203,7 @@ class TexSpecial(TexToken):
 
 
 num_pat = re.compile(r"^(([0-9]+\.?[0-9]*)|([0-9]*\.?[0-9]+))$")
-int_pat = re.compile(r"[0-9]*")
+int_pat = re.compile(r"^[0-9]*$")
 
 class TexRegular(TexToken):
 	'''A plain character with no special meaning'''
@@ -513,7 +528,16 @@ TexCommand.define({
 	"sin": ( ['token'], [] ),
 	"cos": ( ['token'], [] ),
 	"tan": ( ['token'], [] ),
-	"\\": ( ['spacing'], [0] )
+	"\\": ( ['spacing'], [0] ),
+
+    "cap": ([], []), # Intersection
+    "cup": ([], []), # Union
+
+    "lceil": ([], []),
+    "rceil": ([], []),
+
+    "lfloor": ([], []),
+    "rflorr": ([], [])
 
 })
 # See http://en.wikibooks.org/wiki/LaTeX/Mathematics for a lot more examples to implement
@@ -580,6 +604,14 @@ def tokenize_latex(tex):
 			comment = False
 
 	return tokens
+
+'''
+	Try to match a TexToken to a pattern
+
+'''
+def match(pat):
+    pass
+
 
 def expr(arr):
 	if type(arr) is list:
