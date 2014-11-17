@@ -7,6 +7,7 @@ def test_latex_parser():
 	inputs = {
 		"x" : x,
 		"1.234": 1.234,
+		"-8": -8,
 		"x + y": (x + y),
 		"xy": (x*y),
 		"2x^3": (2*(x**3)),
