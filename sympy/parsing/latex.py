@@ -639,6 +639,8 @@ def expr(arr):
 
 		if len(a) == 1:
 			return a[0]
+		elif len(a) == 0:
+			return 0
 		else:
 			e = 1
 			for i in range(len(a)): # Implicit multiplation, TODO: Move this elsewere, implicit multiplication doesn't always make sense
