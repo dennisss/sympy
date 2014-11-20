@@ -231,8 +231,8 @@ class TexRegular(TexToken):
 		elif self.data == "/":
 
 			# TODO: {}^1/_2 will not work are the exponent was consumed by the empty group
-			if type(it[-1]) == TexSpecial and it[-1].data == "^" and \
-				type(it[1]) == TexSpecial and it[-1].data == "_":
+			if isinstance(it[-1], TexSpecial) and it[-1].data == "^" and \
+				isinstance(it[1], TexSpecial) and it[-1].data == "_":
 					it[-1:2] = expr(it[-1].arg) / expr(it[1].arg)
 			else:
 				it[:] = expr(it[:0]) / expr(it[1:])
@@ -247,13 +247,15 @@ class TexRegular(TexToken):
 			# it[lambda_start : lambda_stop]
 
 			i = it.next()
-			while type(i[0]) != TexRegular or i[0].data != ')':
+			while (not isinstance(i[0], TexRegular)) or i[0].data != ')':
 
-				if type(i[0]) == TexRegular and i[0].data == "(": # Resolve the inner set of parenthesis first
+				if isinstance(i[0], TexRegular) and i[0].data == "(": # Resolve the inner set of parenthesis first
 					i[0].expr(i)
 
 				i = i.next()
 
+
+			# TODO: Python2 does not support objects in the index
 			#   (x)        =     expr x
 			it[0:i.next()] = expr( it[1:i] )
 
@@ -262,7 +264,7 @@ class TexRegular(TexToken):
 			it[:1] = sympy.factorial( expr(it[:0]) )
 
 		elif re.match(num_pat, self.data): # Number
-			while type(it[1]) == TexRegular and re.match(num_pat, self.data + it[1].data):
+			while isinstance(it[1], TexRegular) and re.match(num_pat, self.data + it[1].data):
 				self.data = self.data + it[1].data
 				del it[1]
 
@@ -344,7 +346,7 @@ class TexTable(TexGroup):
 			return res
 
 
-		iscoldelim = lambda t: type(t) is TexSpecial and t.data == "&"
+		iscoldelim = lambda t: isinstance(t, TexSpecial) and t.data == "&"
 		isrowdelim = lambda t: isinstance(t, TexCommand) and t.name == "\\"
 		isdelim = lambda t: (iscoldelim(t) or isrowdelim(t))
 

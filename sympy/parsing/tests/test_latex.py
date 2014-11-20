@@ -7,6 +7,7 @@ def test_latex_parser():
 	inputs = {
 		"x" : x,
 		"1.234": 1.234,
+		"-34": -34,
 		"-8": -8,
 		"x + y": (x + y),
 		"xy": (x*y),
@@ -23,5 +24,6 @@ def test_latex_parser():
 	}
 
 	for text, result in inputs.items():
-		print(parse_latex(text))
+		#print(text + " >>> ")
+		#print(str(parse_latex(text)) + "\n")
 		assert parse_latex(text) == result
