@@ -111,7 +111,8 @@ class LatexPrinter(Printer):
         "mat_str": None,
         "mat_delim": "[",
         "symbol_names": {},
-		"align": "c"
+        "align": "c",
+        "sparse": False
     }
 
     def __init__(self, settings=None):
@@ -1252,7 +1253,7 @@ class LatexPrinter(Printer):
         lines = []
 
         for line in range(expr.rows):  # horrible, should be 'rows'
-            lines.append(" & ".join([ self._print(i) for i in expr[line, :] ]))
+            lines.append(" & ".join([(self._print(i) if not self._settings['sparse'] or i != 0 else "") for i in expr[line, :] ]))
 
         mat_str = self._settings['mat_str']
         if mat_str is None:
