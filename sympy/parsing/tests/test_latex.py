@@ -1,7 +1,7 @@
 from sympy.parsing.latex import parse_latex
 
 from sympy import *
-from sympy.abc import x, y, z, w, pi
+from sympy.abc import x, y, z, w, pi, n, i
 
 def test_latex_parser():
 	inputs = {
@@ -9,6 +9,7 @@ def test_latex_parser():
 		"1.234": 1.234,
 		"-34": -34,
 		"-8": -8,
+        "-7/24": (-7/24),
 		"x + y": (x + y),
 		"xy": (x*y),
 		"2x^3": (2*(x**3)),
@@ -19,8 +20,9 @@ def test_latex_parser():
 		"( x+ y) (z + w) ": ((x+y)*(z+w)),
 		"\\sqrt[y] 2": root(2, y),
 		"\\sqrt 2x": sqrt(2)*x,
-		"x + z\\pi = y": Eq(x+z*pi, y),
-		"\\int x \mathrm{d}x": integrate(x, x)
+		#"x + z\\pi = y": Eq(x+z*pi, y),
+		"\\int x \mathrm{d}x": integrate(x, x),
+        "\\sum^n_{i=1} 2i  \\;\\; + 1": (Sum(2*i, (i, 1, n)).doit() + 1)
 	}
 
 	for text, result in inputs.items():
