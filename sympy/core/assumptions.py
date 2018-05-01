@@ -295,7 +295,7 @@ def _ask(fact, obj):
 
     # Try assumption's prerequisites
     prereq = list(_assume_rules.prereq[fact])
-    shuffle(prereq)
+    #shuffle(prereq)
     for pk in prereq:
         if pk in assumptions:
             continue
