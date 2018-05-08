@@ -727,6 +727,10 @@ class LatexPrinter(Printer):
         exp is an exponent
         '''
         func = expr.func.__name__
+
+        if self._settings["ln_notation"] and func == 'log':
+            func = 'ln'
+
         if hasattr(self, '_print_' + func) and \
             not isinstance(expr.func, UndefinedFunction):
             return getattr(self, '_print_' + func)(expr, exp)
@@ -849,17 +853,6 @@ class LatexPrinter(Printer):
 
     def _print_ceiling(self, expr, exp=None):
         tex = r"\lceil{%s}\rceil" % self._print(expr.args[0])
-
-        if exp is not None:
-            return r"%s^{%s}" % (tex, exp)
-        else:
-            return tex
-
-    def _print_log(self, expr, exp=None):
-        if not self._settings["ln_notation"]:
-            tex = r"\log{\left (%s \right )}" % self._print(expr.args[0])
-        else:
-            tex = r"\ln{\left (%s \right )}" % self._print(expr.args[0])
 
         if exp is not None:
             return r"%s^{%s}" % (tex, exp)
